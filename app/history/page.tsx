@@ -1,9 +1,22 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 
 import { DAY_LABELS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+
+async function deletePlan(formData: FormData) {
+  "use server";
+
+  const planId = formData.get("planId");
+  if (typeof planId !== "string" || !planId) {
+    return;
+  }
+
+  await prisma.weeklyPlan.delete({ where: { id: planId } });
+  revalidatePath("/history");
+}
 
 export default async function HistoryPage() {
   const plans = await prisma.weeklyPlan.findMany({
@@ -33,7 +46,7 @@ export default async function HistoryPage() {
                 <th>Created By</th>
                 <th>Entries</th>
                 <th>Eat-out days</th>
-                <th></th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -52,7 +65,13 @@ export default async function HistoryPage() {
                     <td>{plan._count.entries}</td>
                     <td>{eatOut || "-"}</td>
                     <td>
-                      <Link href={`/history/${plan.id}`}>Open</Link>
+                      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                        <Link href={`/history/${plan.id}`}>Open</Link>
+                        <form action={deletePlan}>
+                          <input type="hidden" name="planId" value={plan.id} />
+                          <button type="submit">Delete</button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 );
