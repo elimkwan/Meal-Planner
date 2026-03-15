@@ -1,11 +1,21 @@
 "use client";
 
-import { CookPerson, PlanStatus, type PlanEntry, type Recipe, type WeeklyPlan } from "@prisma/client";
+import {
+  CookPerson,
+  PlanStatus,
+  type Availability,
+  type PlanEntry,
+  type Recipe,
+  type WeeklyPlan,
+} from "@prisma/client";
 import { useEffect, useMemo, useState } from "react";
 
 import { DAY_LABELS, MEAL_OPTIONS } from "@/lib/constants";
 
-type PlanWithEntries = WeeklyPlan & { entries: (PlanEntry & { recipe: Recipe | null })[] };
+type PlanWithEntries = WeeklyPlan & {
+  entries: (PlanEntry & { recipe: Recipe | null })[];
+  availability: Availability[];
+};
 
 interface AvailabilityDraft {
   dayOfWeek: number;
@@ -51,15 +61,53 @@ export default function Home() {
     [availability],
   );
 
+  const rosterCredits = useMemo(() => {
+    if (!plan) {
+      return { elim: 0, thomas: 0 };
+    }
+
+    return plan.entries.reduce(
+      (totals, entry) => {
+        const isRosterCredit = !entry.isEatOut && entry.assignedCook && entry.portionCount >= 4;
+        if (!isRosterCredit) {
+          return totals;
+        }
+
+        if (entry.assignedCook === CookPerson.ELIM) {
+          totals.elim += 1;
+        }
+
+        if (entry.assignedCook === CookPerson.THOMAS) {
+          totals.thomas += 1;
+        }
+
+        return totals;
+      },
+      { elim: 0, thomas: 0 },
+    );
+  }, [plan]);
+
+  const onePersonOutDays = useMemo(() => {
+    if (!plan) {
+      return new Set<number>();
+    }
+
+    const days = new Set<number>();
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek += 1) {
+      const outCount = plan.availability.filter((item) => item.dayOfWeek === dayOfWeek && item.isOut).length;
+      if (outCount === 1) {
+        days.add(dayOfWeek);
+      }
+    }
+
+    return days;
+  }, [plan]);
+
   const toggleEatOut = (optionKey: string) => {
     setEatOutOptions((prev) => {
       const has = prev.includes(optionKey);
       if (has) {
         return prev.filter((v) => v !== optionKey);
-      }
-
-      if (prev.length >= 2) {
-        return [prev[1], optionKey];
       }
 
       return [...prev, optionKey];
@@ -180,7 +228,7 @@ export default function Home() {
       <section className="card stack">
         <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }}>Weekly Meal Planner</h1>
         <p className="muted">
-          Generate a weekly meal roster, then edit and save it. Rules included: two eat-out options,
+          Generate a weekly meal roster, then edit and save it. Rules included: eat-out options,
           no roster credit when one person is out, and 4 portions for home-cooked meals.
         </p>
         <div className="grid-two">
@@ -207,7 +255,7 @@ export default function Home() {
         </div>
 
         <div>
-          <p style={{ fontWeight: 700, marginBottom: "0.4rem" }}>Eat out options (pick 2)</p>
+          <p style={{ fontWeight: 700, marginBottom: "0.4rem" }}>Eat out options</p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {MEAL_OPTIONS.map((option) => {
               const optionKey = getMealOptionKey(option);
@@ -238,8 +286,19 @@ export default function Home() {
             <tbody>
               {MEAL_OPTIONS.map((option) => {
                 const day = availability[option.dayOfWeek];
+                const optionKey = getMealOptionKey(option);
                 return (
-                <tr key={getMealOptionKey(option)}>
+                <tr
+                  key={optionKey}
+                  style={
+                    eatOutOptions.includes(optionKey)
+                      ? {
+                          backgroundColor: "rgba(120, 120, 120, 0.12)",
+                          color: "rgba(80, 80, 80, 0.9)",
+                        }
+                      : undefined
+                  }
+                >
                   <td>{option.label}</td>
                   <td>
                     <input
@@ -291,6 +350,9 @@ export default function Home() {
             <h2 style={{ fontSize: "1.2rem", fontWeight: 800 }}>Generated Plan</h2>
             <span className="badge">Status: {plan.status}</span>
           </div>
+          <p className="muted">
+            Roster credits: Elim {rosterCredits.elim} | Thomas {rosterCredits.thomas}
+          </p>
           <table>
             <thead>
               <tr>
@@ -304,7 +366,17 @@ export default function Home() {
             </thead>
             <tbody>
               {plan.entries.map((entry) => (
-                <tr key={entry.id}>
+                <tr
+                  key={entry.id}
+                  style={
+                    entry.isEatOut
+                      ? {
+                          backgroundColor: "rgba(120, 120, 120, 0.12)",
+                          color: "rgba(80, 80, 80, 0.9)",
+                        }
+                      : undefined
+                  }
+                >
                   <td>{DAY_LABELS[entry.dayOfWeek]}</td>
                   <td>{entry.mealSlot === "LUNCH" ? "Lunch" : "Dinner"}</td>
                   <td>
@@ -324,7 +396,15 @@ export default function Home() {
                       ))}
                     </select>
                   </td>
-                  <td>
+                  <td
+                    style={
+                      onePersonOutDays.has(entry.dayOfWeek)
+                        ? {
+                            backgroundColor: "rgba(120, 120, 120, 0.12)",
+                          }
+                        : undefined
+                    }
+                  >
                     <select
                       value={entry.assignedCook ?? ""}
                       onChange={(event) =>

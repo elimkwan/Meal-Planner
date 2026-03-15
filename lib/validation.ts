@@ -16,15 +16,11 @@ export const generatePlanSchema = z.object({
         mealSlot: z.nativeEnum(MealSlot),
       }),
     )
-    .length(2)
     .optional(),
-  eatOutDays: z.array(z.number().int().min(0).max(6)).length(2).optional(),
+  eatOutDays: z.array(z.number().int().min(0).max(6)).optional(),
   availability: z.array(availabilitySchema).default([]),
   recipeIds: z.array(z.string().min(1)).optional(),
   createdByPerson: z.nativeEnum(CookPerson).default(CookPerson.ELIM),
-}).refine((data) => Boolean(data.eatOutOptions || data.eatOutDays), {
-  message: "Select exactly 2 eat out options.",
-  path: ["eatOutOptions"],
 });
 
 export const patchPlanSchema = z.object({
