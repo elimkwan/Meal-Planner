@@ -62,7 +62,7 @@ Use the UI button on the home page, or call:
 ```bash
 curl -X POST http://localhost:3000/api/import/excel \
   -H "Content-Type: application/json" \
-  -d '{"workbookPath":"/Users/elim/Downloads/Meal Plan.xlsx","dryRun":false,"createdByPerson":"ELIM"}'
+  -d '{"workbookPath":"./data/Meal_Plan.xlsx","dryRun":false,"createdByPerson":"ELIM"}'
 ```
 
 Dry-run parser only:

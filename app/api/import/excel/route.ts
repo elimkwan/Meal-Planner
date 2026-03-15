@@ -44,8 +44,11 @@ export async function POST(request: NextRequest) {
   const data = payload.data;
   const uvBin = process.env.UV_BIN ?? path.join(process.env.HOME ?? "", ".local/bin/uv");
   const ingestionCwd = path.join(process.cwd(), "tools/ingestion");
+  const workbookPath = path.isAbsolute(data.workbookPath)
+    ? data.workbookPath
+    : path.resolve(process.cwd(), data.workbookPath);
 
-  const cmd = spawnSync(uvBin, ["run", "python", "main.py", data.workbookPath], {
+  const cmd = spawnSync(uvBin, ["run", "python", "main.py", workbookPath], {
     cwd: ingestionCwd,
     encoding: "utf8",
   });

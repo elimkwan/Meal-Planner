@@ -148,7 +148,7 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        workbookPath: "/Users/elim/Downloads/Meal Plan.xlsx",
+        workbookPath: "./data/Meal_Plan.xlsx",
         dryRun: false,
         createdByPerson,
       }),

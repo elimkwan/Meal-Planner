@@ -10,7 +10,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "ingest:sync": "cd tools/ingestion && ${UV_BIN:-$HOME/.local/bin/uv} sync",
-    "ingest:dryrun": "cd tools/ingestion && ${UV_BIN:-$HOME/.local/bin/uv} run python main.py \"/Users/elim/Downloads/Meal Plan.xlsx\""
+    "ingest:dryrun": "cd tools/ingestion && ${UV_BIN:-$HOME/.local/bin/uv} run python main.py \"../../data/Meal_Plan.xlsx\""
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",
