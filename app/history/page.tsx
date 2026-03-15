@@ -18,6 +18,13 @@ async function deletePlan(formData: FormData) {
   revalidatePath("/history");
 }
 
+async function clearAllPlans() {
+  "use server";
+
+  await prisma.weeklyPlan.deleteMany();
+  revalidatePath("/history");
+}
+
 export default async function HistoryPage() {
   const plans = await prisma.weeklyPlan.findMany({
     orderBy: { weekStartDate: "desc" },
@@ -32,52 +39,62 @@ export default async function HistoryPage() {
       <section className="card">
         <h1 style={{ fontSize: "1.4rem", fontWeight: 800 }}>Plan History</h1>
         <p className="muted">Open any week to review meals, cooks, and grocery context.</p>
+        <p className="muted" style={{ marginTop: "0.4rem" }}>
+          Historical plans: {plans.length}
+        </p>
       </section>
 
       <section className="card">
         {plans.length === 0 ? (
           <p className="muted">No plans yet.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Week Start</th>
-                <th>Status</th>
-                <th>Created By</th>
-                <th>Entries</th>
-                <th>Eat-out days</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((plan) => {
-                const eatOut = Array.isArray(plan.eatOutDays)
-                  ? plan.eatOutDays
-                      .map((v) => (typeof v === "number" ? DAY_LABELS[v] : null))
-                      .filter(Boolean)
-                      .join(", ")
-                  : "";
-                return (
-                  <tr key={plan.id}>
-                    <td>{new Date(plan.weekStartDate).toLocaleDateString()}</td>
-                    <td>{plan.status}</td>
-                    <td>{plan.createdBy.name}</td>
-                    <td>{plan._count.entries}</td>
-                    <td>{eatOut || "-"}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-                        <Link href={`/history/${plan.id}`}>Open</Link>
-                        <form action={deletePlan}>
-                          <input type="hidden" name="planId" value={plan.id} />
-                          <button type="submit">Delete</button>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="stack" style={{ gap: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <form action={clearAllPlans}>
+                <button type="submit">Clear all</button>
+              </form>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Week Start</th>
+                  <th>Status</th>
+                  <th>Created By</th>
+                  <th>Entries</th>
+                  <th>Eat-out days</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plans.map((plan) => {
+                  const eatOut = Array.isArray(plan.eatOutDays)
+                    ? plan.eatOutDays
+                        .map((v) => (typeof v === "number" ? DAY_LABELS[v] : null))
+                        .filter(Boolean)
+                        .join(", ")
+                    : "";
+                  return (
+                    <tr key={plan.id}>
+                      <td>{new Date(plan.weekStartDate).toLocaleDateString()}</td>
+                      <td>{plan.status}</td>
+                      <td>{plan.createdBy.name}</td>
+                      <td>{plan._count.entries}</td>
+                      <td>{eatOut || "-"}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                          <Link href={`/history/${plan.id}`}>Open</Link>
+                          <form action={deletePlan}>
+                            <input type="hidden" name="planId" value={plan.id} />
+                            <button type="submit">Delete</button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>
