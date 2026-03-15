@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
-import { DAY_LABELS } from "@/lib/constants";
+import { DAY_LABELS, MEAL_OPTIONS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export default async function HistoryPage() {
                   <th>Status</th>
                   <th>Created By</th>
                   <th>Entries</th>
-                  <th>Eat-out days</th>
+                  <th>Eat-out options</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -69,7 +69,26 @@ export default async function HistoryPage() {
                 {plans.map((plan) => {
                   const eatOut = Array.isArray(plan.eatOutDays)
                     ? plan.eatOutDays
-                        .map((v) => (typeof v === "number" ? DAY_LABELS[v] : null))
+                        .map((v) => {
+                          if (typeof v === "number") {
+                            return DAY_LABELS[v];
+                          }
+
+                          if (v && typeof v === "object" && "dayOfWeek" in v && "mealSlot" in v) {
+                            const dayOfWeek =
+                              typeof v.dayOfWeek === "number" ? v.dayOfWeek : Number.NaN;
+                            const mealSlot =
+                              typeof v.mealSlot === "string" ? v.mealSlot : "";
+                            const option = MEAL_OPTIONS.find(
+                              (item) =>
+                                item.dayOfWeek === dayOfWeek &&
+                                item.mealSlot === mealSlot,
+                            );
+                            return option?.label ?? null;
+                          }
+
+                          return null;
+                        })
                         .filter(Boolean)
                         .join(", ")
                     : "";

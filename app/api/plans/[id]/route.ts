@@ -11,7 +11,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     include: {
       entries: {
         include: { recipe: true },
-        orderBy: { dayOfWeek: "asc" },
+        orderBy: [{ dayOfWeek: "asc" }, { mealSlot: "desc" }],
       },
       availability: true,
       createdBy: true,
@@ -61,7 +61,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     include: {
       entries: {
         include: { recipe: true },
-        orderBy: { dayOfWeek: "asc" },
+        orderBy: [{ dayOfWeek: "asc" }, { mealSlot: "desc" }],
       },
       availability: true,
       createdBy: true,

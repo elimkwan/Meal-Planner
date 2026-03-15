@@ -3,7 +3,7 @@
 import { CookPerson, PlanStatus, type PlanEntry, type Recipe, type WeeklyPlan } from "@prisma/client";
 import { useEffect, useMemo, useState } from "react";
 
-import { DAY_LABELS } from "@/lib/constants";
+import { DAY_LABELS, MEAL_OPTIONS } from "@/lib/constants";
 
 type PlanWithEntries = WeeklyPlan & { entries: (PlanEntry & { recipe: Recipe | null })[] };
 
@@ -12,6 +12,9 @@ interface AvailabilityDraft {
   elimOut: boolean;
   thomasOut: boolean;
 }
+
+const getMealOptionKey = (option: { dayOfWeek: number; mealSlot: "LUNCH" | "DINNER" }) =>
+  `${option.dayOfWeek}-${option.mealSlot}`;
 
 const emptyAvailability = DAY_LABELS.map((_, dayOfWeek) => ({
   dayOfWeek,
@@ -22,7 +25,7 @@ const emptyAvailability = DAY_LABELS.map((_, dayOfWeek) => ({
 export default function Home() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [weekStartDate, setWeekStartDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [eatOutDays, setEatOutDays] = useState<number[]>([4, 5]);
+  const [eatOutOptions, setEatOutOptions] = useState<string[]>(["4-DINNER", "5-DINNER"]);
   const [availability, setAvailability] = useState<AvailabilityDraft[]>(emptyAvailability);
   const [createdByPerson, setCreatedByPerson] = useState<CookPerson>(CookPerson.ELIM);
   const [plan, setPlan] = useState<PlanWithEntries | null>(null);
@@ -48,18 +51,18 @@ export default function Home() {
     [availability],
   );
 
-  const toggleEatOut = (day: number) => {
-    setEatOutDays((prev) => {
-      const has = prev.includes(day);
+  const toggleEatOut = (optionKey: string) => {
+    setEatOutOptions((prev) => {
+      const has = prev.includes(optionKey);
       if (has) {
-        return prev.filter((v) => v !== day);
+        return prev.filter((v) => v !== optionKey);
       }
 
       if (prev.length >= 2) {
-        return [prev[1], day];
+        return [prev[1], optionKey];
       }
 
-      return [...prev, day];
+      return [...prev, optionKey];
     });
   };
 
@@ -83,7 +86,12 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         weekStartDate: `${weekStartDate}T00:00:00.000Z`,
-        eatOutDays,
+        eatOutOptions: MEAL_OPTIONS.filter((option) =>
+          eatOutOptions.includes(getMealOptionKey(option)),
+        ).map((option) => ({
+          dayOfWeek: option.dayOfWeek,
+          mealSlot: option.mealSlot,
+        })),
         availability: availabilityPayload,
         createdByPerson,
       }),
@@ -172,7 +180,7 @@ export default function Home() {
       <section className="card stack">
         <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }}>Weekly Meal Planner</h1>
         <p className="muted">
-          Generate a weekly dinner roster, then edit and save it. Rules included: two eat-out days,
+          Generate a weekly meal roster, then edit and save it. Rules included: two eat-out options,
           no roster credit when one person is out, and 4 portions for home-cooked meals.
         </p>
         <div className="grid-two">
@@ -199,18 +207,21 @@ export default function Home() {
         </div>
 
         <div>
-          <p style={{ fontWeight: 700, marginBottom: "0.4rem" }}>Eat out days (pick 2)</p>
+          <p style={{ fontWeight: 700, marginBottom: "0.4rem" }}>Eat out options (pick 2)</p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            {DAY_LABELS.map((day, index) => (
+            {MEAL_OPTIONS.map((option) => {
+              const optionKey = getMealOptionKey(option);
+              return (
               <button
-                key={day}
+                key={optionKey}
                 type="button"
-                className={eatOutDays.includes(index) ? "" : "secondary"}
-                onClick={() => toggleEatOut(index)}
+                className={eatOutOptions.includes(optionKey) ? "" : "secondary"}
+                onClick={() => toggleEatOut(optionKey)}
               >
-                {day}
+                {option.label}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -219,15 +230,17 @@ export default function Home() {
           <table>
             <thead>
               <tr>
-                <th>Day</th>
+                <th>Meal option</th>
                 <th>Elim out?</th>
                 <th>Thomas out?</th>
               </tr>
             </thead>
             <tbody>
-              {availability.map((day) => (
-                <tr key={day.dayOfWeek}>
-                  <td>{DAY_LABELS[day.dayOfWeek]}</td>
+              {MEAL_OPTIONS.map((option) => {
+                const day = availability[option.dayOfWeek];
+                return (
+                <tr key={getMealOptionKey(option)}>
+                  <td>{option.label}</td>
                   <td>
                     <input
                       type="checkbox"
@@ -255,7 +268,8 @@ export default function Home() {
                     />
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -281,6 +295,7 @@ export default function Home() {
             <thead>
               <tr>
                 <th>Day</th>
+                <th>Meal</th>
                 <th>Recipe</th>
                 <th>Cook</th>
                 <th>Eat out</th>
@@ -291,6 +306,7 @@ export default function Home() {
               {plan.entries.map((entry) => (
                 <tr key={entry.id}>
                   <td>{DAY_LABELS[entry.dayOfWeek]}</td>
+                  <td>{entry.mealSlot === "LUNCH" ? "Lunch" : "Dinner"}</td>
                   <td>
                     <select
                       value={entry.recipeId ?? ""}

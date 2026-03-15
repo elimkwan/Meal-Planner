@@ -14,7 +14,7 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
     include: {
       entries: {
         include: { recipe: true },
-        orderBy: { dayOfWeek: "asc" },
+        orderBy: [{ dayOfWeek: "asc" }, { mealSlot: "desc" }],
       },
       createdBy: true,
     },
@@ -52,7 +52,7 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
             {plan.entries.map((entry) => (
               <tr key={entry.id}>
                 <td>{DAY_LABELS[entry.dayOfWeek]}</td>
-                <td>{entry.mealSlot}</td>
+                <td>{entry.mealSlot === "LUNCH" ? "Lunch" : "Dinner"}</td>
                 <td>{entry.recipe?.name ?? "-"}</td>
                 <td>{entry.assignedCook ?? "-"}</td>
                 <td>{entry.isEatOut ? "Yes" : "No"}</td>

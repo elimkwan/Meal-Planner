@@ -13,6 +13,12 @@ export async function POST(request: NextRequest) {
   }
 
   const data = payload.data;
+  const eatOutOptions =
+    data.eatOutOptions ??
+    (data.eatOutDays ?? []).map((dayOfWeek) => ({
+      dayOfWeek,
+      mealSlot: "DINNER" as const,
+    }));
   const recipes = data.recipeIds?.length
     ? await prisma.recipe.findMany({ where: { id: { in: data.recipeIds } } })
     : await prisma.recipe.findMany({ take: 25, orderBy: { name: "asc" } });
@@ -20,14 +26,14 @@ export async function POST(request: NextRequest) {
   const createdById = await getUserIdForPerson(data.createdByPerson);
   const entries = buildPlanEntries({
     recipes,
-    eatOutDays: data.eatOutDays,
+    eatOutOptions,
     availability: data.availability,
   });
 
   const plan = await prisma.weeklyPlan.create({
     data: {
       weekStartDate: new Date(data.weekStartDate),
-      eatOutDays: data.eatOutDays,
+      eatOutDays: eatOutOptions,
       createdById,
       availability: {
         create: data.availability,
@@ -41,7 +47,7 @@ export async function POST(request: NextRequest) {
     include: {
       entries: {
         include: { recipe: true },
-        orderBy: { dayOfWeek: "asc" },
+        orderBy: [{ dayOfWeek: "asc" }, { mealSlot: "desc" }],
       },
       availability: true,
     },
