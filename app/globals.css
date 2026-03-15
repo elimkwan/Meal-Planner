@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f8f6f1;
-  --surface: #fffdfa;
-  --ink: #23201a;
-  --muted: #6e675d;
-  --accent: #7a3e1d;
-  --accent-soft: #e9c7b8;
-  --line: #d8d0c4;
+  --bg: #eef5ff;
+  --surface: #f8fbff;
+  --ink: #1f2d44;
+  --muted: #5f7391;
+  --accent: #4f7ecf;
+  --accent-soft: #dbe9ff;
+  --line: #c8d9f0;
 }
 
 * {
@@ -16,7 +16,7 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at 0% 0%, #f2e8dc 0%, var(--bg) 40%);
+  background: radial-gradient(circle at 0% 0%, #dfeeff 0%, var(--bg) 40%);
   color: var(--ink);
   font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -124,7 +124,7 @@ td {
 }
 
 .badge {
-  background: #efe9df;
+  background: #e8f1ff;
   border: 1px solid var(--line);
   border-radius: 999px;
   display: inline-flex;
