@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CookPerson {
+  ELIM
+  THOMAS
+}
+
+enum PlanStatus {
+  DRAFT
+  FINAL
+}
+
+enum MealSlot {
+  DINNER
+  LUNCH
+}
+
+model User {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  name      String
+  person    CookPerson  @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  plans     WeeklyPlan[]
+}
+
+model Recipe {
+  id             String      @id @default(cuid())
+  name           String      @unique
+  defaultPortion Int         @default(4)
+  ingredients    Json
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  entries        PlanEntry[]
+}
+
+model WeeklyPlan {
+  id            String         @id @default(cuid())
+  weekStartDate DateTime
+  status        PlanStatus     @default(DRAFT)
+  eatOutDays    Json
+  createdById   String
+  createdBy     User           @relation(fields: [createdById], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  entries       PlanEntry[]
+  availability  Availability[]
+
+  @@index([weekStartDate])
+}
+
+model PlanEntry {
+  id           String      @id @default(cuid())
+  weeklyPlanId String
+  weeklyPlan   WeeklyPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int
+  mealSlot     MealSlot    @default(DINNER)
+  recipeId     String?
+  recipe       Recipe?     @relation(fields: [recipeId], references: [id])
+  assignedCook CookPerson?
+  isEatOut     Boolean     @default(false)
+  portionCount Int         @default(4)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([weeklyPlanId, dayOfWeek, mealSlot])
+}
+
+model Availability {
+  id           String      @id @default(cuid())
+  weeklyPlanId String
+  weeklyPlan   WeeklyPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  person       CookPerson
+  dayOfWeek    Int
+  isOut        Boolean
+
+  @@unique([weeklyPlanId, person, dayOfWeek])
+}

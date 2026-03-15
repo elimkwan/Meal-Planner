@@ -1,0 +1,9 @@
+[project]
+name = "meal-planner-ingestion"
+version = "0.1.0"
+description = "Meal planner Excel ingestion and normalization"
+requires-python = ">=3.8"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pydantic>=2.10.6",
+]
